@@ -58,15 +58,39 @@ def even_odd(n):
 
 @app.route('/states_list', strict_slashes=False)
 def states_list():
-    """Display a HTML page"""
+    """states list"""
     states = storage.all(State).values()
     return render_template('7-states_list.html', states=states)
 
 
 @app.teardown_appcontext
-def clozer(self):
+def t1clozer(self):
     """ string to be returned """
     storage.close()
+
+
+@app.route('/cities_by_states', strict_slashes=False)
+def cities_states():
+    """ cities with states """
+    states = storage.all(State).values()
+    return render_template('8-cities_by_states.html', states=states)
+
+
+@app.route('/states', strict_slashes=False)
+def states():
+    """states """
+    states = storage.all(State).values()
+    return render_template('9-states.html', states=states)
+
+
+@app.route('/states/<id>', strict_slashes=False)
+def states_by_id(id):
+    key = "State.{}".format(id)
+    if key in storage.all(State).values():
+        states = storage.all('State')["State.{}".format(id)]
+    else:
+        states = None
+    return render_template('9-states.html', states=states)
 
 
 if __name__ == "__main__":
