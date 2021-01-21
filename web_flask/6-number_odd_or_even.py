@@ -1,57 +1,49 @@
 #!/usr/bin/python3
-"""Flask"""
+"""Script that starts a Flask web application"""
 from flask import Flask, render_template
 app = Flask(__name__)
 
 
 @app.route('/', strict_slashes=False)
-def hello_route():
-    """Hello Flask!
-    """
-    return "Hello HBNB!"
+def hello_HBNB():
+    """Returns 'Hello HBNB!"""
+    return 'Hello HBNB!'
 
 
 @app.route('/hbnb', strict_slashes=False)
-def hbnb():
-    """ Display a custom message
-    """
-    return "HBNB"
+def HBNB():
+    """Returns HBNB"""
+    return 'HBNB'
 
 
 @app.route('/c/<text>', strict_slashes=False)
-def c_text(text):
-    """replace underscore _ symbols with a space
-    """
-    return 'C %s' % text.replace('_', ' ')
+def c_is_fun(text):
+    """Returns c <text>"""
+    return 'C {}'.format(text.replace('_', ' '))
 
 
-@app.route('/python/', defaults={'text': "is_cool"})
+@app.route('/python', strict_slashes=False)
 @app.route('/python/<text>', strict_slashes=False)
-def python_text(text):
-    """replace underscore _ symbols with a space
-    """
-    return 'Python %s' % text.replace('_', ' ')
+def python_is_cool(text='is_cool'):
+    """Returns Python <text>"""
+    return 'Python {}'.format(text.replace('_', ' '))
 
 
 @app.route('/number/<int:n>', strict_slashes=False)
-def num(n):
-    """display “n is a number” only if n is an integer
-    """
-    return "%d is a number" % n
+def n_is_number(n):
+    """Returns <n> is a number"""
+    return '{} is a number'.format(n)
 
 
 @app.route('/number_template/<int:n>', strict_slashes=False)
-def num_template(n):
-    """ Function that receives a number argument and render the template
-    """
+def number_template(n):
+    """Display a HTML page only if n is an integer"""
     return render_template('5-number.html', number=n)
 
 
 @app.route('/number_odd_or_even/<int:n>', strict_slashes=False)
-def number_odd_even(n):
-    """  Function that receives a number argument, render a template and
-    a conditional
-    """
+def number_odd_or_even(n):
+    """Display a HTML page only if n is an integer"""
     return render_template('6-number_odd_or_even.html', number=n)
 
 if __name__ == '__main__':

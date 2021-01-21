@@ -3,13 +3,14 @@
 import cmd
 import sys
 from models.base_model import BaseModel
-from models.__init__ import storage
+from models import storage
 from models.user import User
 from models.place import Place
 from models.state import State
 from models.city import City
 from models.amenity import Amenity
 from models.review import Review
+import shlex
 
 
 class HBNBCommand(cmd.Cmd):
@@ -73,7 +74,7 @@ class HBNBCommand(cmd.Cmd):
                 pline = pline[2].strip()  # pline is now str
                 if pline:
                     # check for *args or **kwargs
-                    if pline[0] is '{' and pline[-1] is '}'\
+                    if pline[0] is '{' and pline[-1] is'}'\
                             and type(eval(pline)) is dict:
                         _args = pline
                     else:
@@ -115,16 +116,26 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, args):
         """ Create an object of any class"""
-        if not args:
+        arguments = args.split()
+        if len(arguments) == 0:
             print("** class name missing **")
             return
-        elif args not in HBNBCommand.classes:
+        if arguments[0] not in HBNBCommand.classes:
             print("** class doesn't exist **")
             return
-        new_instance = HBNBCommand.classes[args]()
-        storage.save()
-        print(new_instance.id)
-        storage.save()
+        new_obj = eval(arguments[0])()
+        for param in arguments[1:]:
+            key, value = param.split("=")
+            try:
+                value = eval(value)
+                if type(value) is str:
+                    value = value.replace('_', ' ')
+            except:
+                continue
+            if hasattr(new_obj, key):
+                setattr(new_obj, key, value)
+        print(new_obj.id)
+        new_obj.save()
 
     def help_create(self):
         """ Help information for the create method """
@@ -197,23 +208,23 @@ class HBNBCommand(cmd.Cmd):
         print("Destroys an individual instance of a class")
         print("[Usage]: destroy <className> <objectId>\n")
 
-    def do_all(self, args):
+    def do_all(self, line):
         """ Shows all objects, or all objects of a class"""
-        print_list = []
-
-        if args:
-            args = args.split(' ')[0]  # remove possible trailing args
-            if args not in HBNBCommand.classes:
-                print("** class doesn't exist **")
-                return
-            for k, v in storage._FileStorage__objects.items():
-                if k.split('.')[0] == args:
-                    print_list.append(str(v))
-        else:
-            for k, v in storage._FileStorage__objects.items():
-                print_list.append(str(v))
-
-        print(print_list)
+        l = []
+        if not line:
+            o = storage.all()
+            for k in o:
+                l.append(o[k].__str__())
+            print(l)
+            return
+        args = line.split(" ")
+        if args[0] not in self.classes:
+            print("** class doesn't exist **")
+            return
+        o = storage.all(eval(args[0]))
+        for k in o:
+            l.append(o[k].__str__())
+        print(l)
 
     def help_all(self):
         """ Help information for the all command """
@@ -319,7 +330,6 @@ class HBNBCommand(cmd.Cmd):
         """ Help information for the update class """
         print("Updates an object with new information")
         print("Usage: update <className> <id> <attName> <attVal>\n")
-
 
 if __name__ == "__main__":
     HBNBCommand().cmdloop()

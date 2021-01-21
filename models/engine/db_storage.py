@@ -1,74 +1,76 @@
 #!/usr/bin/python3
-""" create class dbs storage """
+"""DBStorage engine"""
+from sqlalchemy import create_engine
+from os import getenv
 from models.base_model import Base
 from models.user import User
-from models.place import Place
 from models.state import State
 from models.city import City
 from models.amenity import Amenity
+from models.place import Place
 from models.review import Review
-from os import getenv
-from sqlalchemy import (create_engine)
-from sqlalchemy.orm import sessionmaker, scoped_session
-
-
-database = getenv("HBNB_MYSQL_DB")
-user = getenv("HBNB_MYSQL_USER")
-host = getenv("HBNB_MYSQL_HOST")
-password = getenv("HBNB_MYSQL_PWD")
-hbnb_env = getenv("HBNB_ENV")
+from sqlalchemy.orm import scoped_session
+from sqlalchemy.orm import sessionmaker
 
 
 class DBStorage:
-    """ Class DBstorage """
+    """DBStorage Class"""
+
     __engine = None
     __session = None
 
     def __init__(self):
-        """init funct"""
-        DBStorage.__engine = create_engine('mysql+mysqldb://{}:{}@{}/{}'.format
-                                           (user, password, host, database),
-                                           pool_pre_ping=True)
-
-        if hbnb_env == 'test':
+        """Initializates a new instance of DBStorage"""
+        self.__engine = create_engine(
+            "mysql+mysqldb://{}:{}@{}/{}".format(
+                getenv("HBNB_MYSQL_USER"),
+                getenv("HBNB_MYSQL_PWD"),
+                getenv("HBNB_MYSQL_HOST"),
+                getenv("HBNB_MYSQL_DB")),
+            pool_pre_ping=True)
+        if getenv("HBNB_ENV") == "test":
             Base.metadata.drop_all(self.__engine)
 
     def all(self, cls=None):
-        """Returns a dictionary of models currently in db_storage"""
-        new_dict = {}
+        """Query on the current database session"""
+        instances = {}
         if cls is None:
-            new_query = DBStorage.__session.query(User, State, City,
-                                                  Amenity, Place, Review).all()
-            for obj in new_query:
-                new_dict[obj.to_dict()['__class__'] + '.' + obj.id] = obj
-            return new_dict
+            all_cls = ["State", "City", "User", "Place", "Review", "Amenity"]
+
+            for cl in all_cls:
+                objs = self.__session.query(eval(cl))
+                for obj in objs:
+                    key = "{}.{}".format(type(obj).__name__, obj.id)
+                    instances[key] = obj
+
         else:
-            new_query = DBStorage.__session.query(cls).all()
-            for obj in new_query:
-                new_dict[obj.to_dict()['__class__'] + '.' + obj.id] = obj
-            return new_dict
+            objs = self.__session.query(cls).all()
+            for obj in objs:
+                key = "{}.{}".format(type(obj).__name__, obj.id)
+                instances[key] = obj
+
+        return instances
 
     def new(self, obj):
-        """Adds new object to db storage"""
+        """Add the object to the current database session"""
         self.__session.add(obj)
 
     def save(self):
-        """Saves in dbstorage a object"""
+        """Commit all changes of the current database session"""
         self.__session.commit()
 
     def delete(self, obj=None):
-        """Delete object in databases"""
-        if obj:
+        """Delete from the current database session"""
+        if obj is not None:
             self.__session.delete(obj)
 
     def reload(self):
-        """Loads storage dictionary from database"""
-        Base.metadata.create_all(DBStorage.__engine)
-        session_factory = sessionmaker(bind=DBStorage.__engine,
-                                       expire_on_commit=False)
-        Session = scoped_session(session_factory)
-        DBStorage.__session = Session()
+        """Create all tables in the database"""
+        Base.metadata.create_all(self.__engine)
+        Session = scoped_session(
+            sessionmaker(bind=self.__engine, expire_on_commit=False))
+        self.__session = Session()
 
     def close(self):
-        """call remove method"""
+        """Calls remove() method"""
         self.__session.close()
